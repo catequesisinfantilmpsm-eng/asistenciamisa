@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#116b3b">
+  <title>Asistencia a Misa CATEKIDS</title>
+  <style>
+    :root{--green:#116b3b;--deep:#083e25;--cream:#fffaf0;--line:#dfe9e2;--text:#173126}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eef8f1,#fff8e8);color:var(--text)}
+    .wrap{max-width:1120px;margin:auto;padding:20px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .mark{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#fff;font-size:28px;box-shadow:0 8px 24px #116b3b33}
+    h1{margin:0;font-size:clamp(22px,4vw,34px);color:var(--deep)}.sub{margin:3px 0 0;color:#527061}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 30px #164b2b14;margin-bottom:16px}
+    .login{max-width:470px;margin:10vh auto}.login h2{margin-top:0}.row{display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px}
+    label{display:block;font-size:13px;font-weight:700;margin-bottom:5px}select,input,button{width:100%;min-height:44px;border-radius:10px;border:1px solid #bfcfc4;padding:9px 12px;font:inherit}
+    input:focus,select:focus{outline:3px solid #85c99e66;border-color:var(--green)}button{border:0;background:var(--green);color:#fff;font-weight:700;cursor:pointer}
+    button:hover{background:var(--deep)}.status{margin:10px 0 0;font-size:14px}.error{color:#a92720}.hidden{display:none!important}
+    .stats{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}.stat{padding:9px 13px;border-radius:12px;background:#edf7f0;font-weight:700}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tag{padding:6px 9px;border-radius:999px;font-size:12px;font-weight:700}
+    .weekend{background:#c6efce}.thursday{background:#fff2cc}.solemn{background:#bdd7ee}.activity{background:#f8cbad}.ordinary{background:#eee}
+    .tablebox{overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;background:#fff;min-width:700px}
+    th{position:sticky;top:0;background:var(--green);color:#fff;text-align:left;padding:11px}td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+    tr:hover td{background:#f7fbf8}.dates{display:flex;gap:5px;flex-wrap:wrap}.date{white-space:nowrap;padding:5px 7px;border-radius:7px;font-size:12px;font-weight:700}
+    .empty{text-align:center;padding:30px;color:#71857a}@media(max-width:720px){.row{grid-template-columns:1fr}.wrap{padding:12px}.panel{padding:14px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section id="loginView" class="panel login">
+      <div class="brand"><div class="mark">✝</div><div><h1>CATEKIDS</h1><p class="sub">Consulta de asistencia a Misa</p></div></div>
+      <h2>Acceso protegido</h2>
+      <label for="password">Contraseña</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Escribe la contraseña">
+      <button id="loginBtn" style="margin-top:12px">Entrar</button>
+      <p id="loginStatus" class="status"></p>
+    </section>
+
+    <section id="appView" class="hidden">
+      <header class="brand"><div class="mark">✝</div><div><h1>Asistencia a Misa CATEKIDS</h1><p class="sub">Ciclo 2026–2027 · consulta en línea</p></div></header>
+      <div class="panel">
+        <div class="row">
+          <div><label for="stage">Etapa</label><select id="stage"></select></div>
+          <div><label for="group">Grupo</label><select id="group"></select></div>
+          <div><label for="search">Buscar catequizando</label><input id="search" type="search" placeholder="Nombre o código QR"></div>
+        </div>
+        <div class="legend">
+          <span class="tag weekend">Sábado / domingo</span><span class="tag thursday">Jueves</span>
+          <span class="tag solemn">Misa solemne</span><span class="tag activity">Actividad CATEKIDS</span>
+        </div>
+        <div class="stats"><span class="stat" id="groupName"></span><span class="stat" id="cateName"></span><span class="stat" id="count"></span></div>
+      </div>
+      <div class="tablebox"><table><thead><tr><th>No.</th><th>Nombre</th><th>Grupo</th><th>Total</th><th>Fechas de asistencia</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      <p id="updated" class="sub" style="text-align:right;margin-top:10px"></p>
+    </section>
+  </main>
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxZ0Tfu2gta6K8uwdkSg7fysCQOD-fY39xs_I2hDPRlB2KcyeWYGl3i11IKNZqBkXCP/exec";
+    let token="", data=null;
+    const $=id=>document.getElementById(id);
+    async function sha256(text){const bytes=new TextEncoder().encode(text);const hash=await crypto.subtle.digest("SHA-256",bytes);return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+    function jsonp(params){return new Promise((resolve,reject)=>{if(API_URL.startsWith("PEGAR_"))return reject(new Error("Falta colocar la URL de Apps Script."));const cb="catekids_"+Date.now()+"_"+Math.random().toString(36).slice(2);const script=document.createElement("script");const timer=setTimeout(()=>done(new Error("La conexión tardó demasiado.")),15000);function done(err,val){clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(val)}window[cb]=v=>done(null,v);script.onerror=()=>done(new Error("No se pudo conectar con Apps Script."));script.src=API_URL+"?"+new URLSearchParams({...params,callback:cb});document.body.appendChild(script)})}
+    async function login(){const status=$("loginStatus");status.className="status";status.textContent="Comprobando acceso…";try{token=await sha256($("password").value);const res=await jsonp({action:"data",token});if(!res.ok)throw new Error(res.error||"Contraseña incorrecta");data=res;$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");setup()}catch(e){status.className="status error";status.textContent=e.message}}
+    function setup(){const stages=[...new Set(data.groups.map(g=>g.stage))];$("stage").innerHTML=stages.map(x=>`<option>${esc(x)}</option>`).join("");$("stage").onchange=fillGroups;$("group").onchange=render;$("search").oninput=render;fillGroups();$("updated").textContent="Actualizado: "+data.updated}
+    function fillGroups(){const gs=data.groups.filter(g=>g.stage===$("stage").value);$("group").innerHTML=gs.map(g=>`<option value="${esc(g.sheet)}">${esc(g.sheet)}</option>`).join("");render()}
+    function render(){const g=data.groups.find(x=>x.sheet===$("group").value);if(!g)return;const q=norm($("search").value);const kids=g.children.filter(c=>!q||norm(c.name+" "+c.code).includes(q));$("groupName").textContent=(g.group||g.sheet)+" · "+g.stage;$("cateName").textContent=g.catechist||"Catequista";$("count").textContent=kids.length+" catequizandos";$("tbody").innerHTML=kids.length?kids.map((c,i)=>`<tr><td>${i+1}</td><td><strong>${esc(c.name)}</strong><br><small>${esc(c.code||"Sin código")}</small></td><td>${esc(g.group||g.sheet)}</td><td><strong>${c.dates.length}</strong></td><td><div class="dates">${c.dates.map(d=>`<span class="date ${d.type}">${esc(d.date)}</span>`).join("")||'<span class="sub">Sin asistencia registrada</span>'}</div></td></tr>`).join(""):'<tr><td class="empty" colspan="5">No se encontraron catequizandos.</td></tr>'}
+    function norm(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+    $("loginBtn").onclick=login;$("password").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+  </script>
+</body>
+</html>
