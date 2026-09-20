@@ -31,6 +31,10 @@ CORRECCIÓN DE CONEXIÓN
 - Sábado y domingo forman una sola obligación: asistir cualquiera de los dos días cuenta como una asistencia; faltar ambos cuenta como una falta.
 - La Hora Santa aparece en amarillo dentro del caminito y en la impresión, pero es únicamente referencia: no suma asistencia ni falta de Misa.
 - El padrón incorpora también la hoja GENERAL de REGISTRO PERSEVERANTE.
+- Perseverantes reconoce los códigos Pers1, Pers2 y Pers3 aunque las hojas se llamen HILIAMOR PERS, FIDENCIO y EDIL PERS.
+- El reporte de 3 o más faltas carga por etapas: primero nivel, después catequista y al final únicamente sus faltantes.
+- Los porcentajes ya no se calculan para todos los grupos al abrir un nivel; se calculan al entrar al grupo para acelerar la consulta.
+- Solo los registros de Hora Santa realizados en jueves aparecen en amarillo; durante el mes son referencia y no generan falta.
 - La impresión de cada grupo usa una tabla compacta tipo Excel, muestra las fechas por niño y está preparada para que hasta 25 niños quepan en una sola hoja horizontal.
 - Cada grupo muestra su porcentaje acumulado; 100% significa que todos cumplieron todos los fines de semana contabilizados.
 - El reporte ya no se detiene si faltan datos del tutor o WhatsApp.

@@ -5,9 +5,9 @@ const REVIEW_CONFIG = Object.freeze({
   PERSEVERANTE_SPREADSHEET_ID: '1hPTqr2zn4FpC8szHPBORdjx35p1572Yb5y8cPgLo7as',
   REGISTRY_SHEETS: ['CATEQUIZANDOS', 'CATEQUIZANDOS1'],
   ATTENDANCE_SHEETS: ['QR ASISTENCIA', 'ASISTENCIA A MISA', 'ASISTENCIA OTRA MISA'],
-  HIDDEN_SHEETS: ['CONEXIÓN REGISTRO'],
+  HIDDEN_SHEETS: ['CONEXIÓN REGISTRO', 'RANKING DE ASISTENCIA', 'ÍNDICE POR GRUPO'],
   INDEX_CACHE_SECONDS: 600,
-  GROUP_CACHE_SECONDS: 0
+  GROUP_CACHE_SECONDS: 20
 });
 
 function doGet(e) {
@@ -18,7 +18,7 @@ function doGet(e) {
   try {
     const action = String(p.action || 'index');
     if (action === 'group') result = getGroup_(String(p.sheet || ''), false);
-    else if (action === 'alerts') result = getAlerts_();
+    else if (action === 'alerts') result = getAlerts_(String(p.sheets || p.sheet || ''));
     else if (action === 'catechists') result = getCatechists_();
     else result = getIndex_();
   } catch (error) {
@@ -31,36 +31,41 @@ function doGet(e) {
 
 function getIndex_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('review-index-v6');
+  const cached = cache.get('review-index-v7');
   if (cached) return JSON.parse(cached);
   const ss = SpreadsheetApp.openById(REVIEW_CONFIG.SPREADSHEET_ID);
-  const registryChildren = safeRegistryChildren_();
   const groups = ss.getSheets().filter(isPublicGroup_).map(sheet => {
-    const labels = sheet.getRange('A1:A2').getDisplayValues();
+    const lastRow = Math.max(5, Math.min(sheet.getLastRow(), 200));
+    const values = sheet.getRange(1, 1, lastRow, 3).getDisplayValues();
+    const labels = values.slice(0, 2);
     const title = String(labels[0][0] || '');
     const subtitle = String(labels[1][0] || '');
     const stageMatch = title.match(/·\s*([^·]+)\s*·/);
     const groupMatch = subtitle.match(/GRUPO:\s*([^·]+)/i);
     const cateMatch = subtitle.match(/CATEQUISTA:\s*([^·]+)/i);
     const groupName = groupMatch ? groupMatch[1].trim() : sheet.getName();
-    const registered = registryChildren.byGroup[normalizeCode_(sheet.getName())]
-      || registryChildren.byGroup[normalizeCode_(groupName)]
-      || [];
+    const childrenCount = values.slice(5).filter(row => String(row[2] || '').trim()).length;
     return {
       sheet: sheet.getName(),
       stage: stageMatch ? stageMatch[1].trim() : 'CATEKIDS',
       group: groupName,
       catechist: cateMatch ? cateMatch[1].trim() : '',
-      childrenCount: registered.length || Math.max(0, sheet.getLastRow() - 5)
+      childrenCount: childrenCount
     };
   });
   const result = { ok: true, updated: formatNow_(ss), groups: groups };
-  try { cache.put('review-index-v6', JSON.stringify(result), REVIEW_CONFIG.INDEX_CACHE_SECONDS); } catch (_) {}
+  try { cache.put('review-index-v7', JSON.stringify(result), REVIEW_CONFIG.INDEX_CACHE_SECONDS); } catch (_) {}
   return result;
 }
 
 function getGroup_(sheetName, includeFamily) {
   if (!sheetName) throw new Error('Falta seleccionar el grupo.');
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'review-group-v7-' + normalizeCode_(sheetName);
+  if (!includeFamily && REVIEW_CONFIG.GROUP_CACHE_SECONDS > 0) {
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
   const ss = SpreadsheetApp.openById(REVIEW_CONFIG.SPREADSHEET_ID);
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet || !isPublicGroup_(sheet)) throw new Error('No se encontró el grupo solicitado.');
@@ -69,17 +74,25 @@ function getGroup_(sheetName, includeFamily) {
   const attendanceIndex = safeAttendanceIndex_(tz);
   const registryChildren = safeRegistryChildren_();
   const group = readGroup_(sheet, tz, families, attendanceIndex, registryChildren);
-  return { ok: true, updated: formatNow_(ss), group: group };
+  const result = { ok: true, updated: formatNow_(ss), group: group };
+  if (!includeFamily && REVIEW_CONFIG.GROUP_CACHE_SECONDS > 0) {
+    try { cache.put(cacheKey, JSON.stringify(result), REVIEW_CONFIG.GROUP_CACHE_SECONDS); } catch (_) {}
+  }
+  return result;
 }
 
-function getAlerts_() {
+function getAlerts_(sheetNames) {
   const ss = SpreadsheetApp.openById(REVIEW_CONFIG.SPREADSHEET_ID);
   const tz = ss.getSpreadsheetTimeZone() || 'America/Mexico_City';
   const families = safeFamilies_();
   const attendanceIndex = safeAttendanceIndex_(tz);
   const registryChildren = safeRegistryChildren_();
   const alerts = [];
-  ss.getSheets().filter(isPublicGroup_).forEach(sheet => {
+  const requested = String(sheetNames || '').split('|').map(v => v.trim()).filter(Boolean);
+  const sheets = requested.length
+    ? requested.map(name => ss.getSheetByName(name)).filter(sheet => sheet && isPublicGroup_(sheet))
+    : [];
+  sheets.forEach(sheet => {
     const group = readGroup_(sheet, tz, families, attendanceIndex, registryChildren);
     group.children.filter(c => c.absences >= 3).forEach(c => alerts.push({
       sheet: group.sheet, stage: group.stage, group: group.group,
@@ -179,9 +192,14 @@ function readGroup_(sheet, tz, families, attendanceIndex, registryChildren) {
   // La hoja particular del grupo sigue aportando el calendario; el padrón vivo
   // aporta nombres y códigos para las listas, búsquedas y alertas.
   const groupName = groupMatch ? groupMatch[1].trim() : sheet.getName();
-  const registryGroup = registryChildren.byGroup[normalizeCode_(sheet.getName())]
+  let registryGroup = registryChildren.byGroup[normalizeCode_(sheet.getName())]
     || registryChildren.byGroup[normalizeCode_(groupName)]
     || [];
+  if (!registryGroup.length && raw.length) {
+    const possibleKeys = Object.keys(registryChildren.byGroup).sort((a, b) => b.length - a.length);
+    const matchedKey = possibleKeys.find(key => raw.some(child => normalizeCode_(child.code).indexOf(key) === 0));
+    if (matchedKey) registryGroup = registryChildren.byGroup[matchedKey];
+  }
   const merged = {};
   raw.forEach(child => {
     const key = normalizeCode_(child.code) || normalizeText_(child.name);
@@ -337,6 +355,7 @@ function readAttendanceIndex_(tz) {
 
       const date = coerceDate_(row[fi], displayRow[fi]);
       if (!date) continue;
+      if (isHolyHour && Number(Utilities.formatDate(date, tz, 'u')) !== 4) continue;
 
       const code = ci >= 0 ? String(displayRow[ci] || '').trim() : '';
       const name = ni >= 0 ? String(displayRow[ni] || '').trim() : '';
