@@ -9,6 +9,7 @@ Esta versión no solicita contraseña. Cualquier persona que tenga el enlace pue
 2. ACTUALIZAR GITHUB PAGES
 - Sustituye el index.html anterior del repositorio por el de este paquete.
 - Sube también senor-misericordia.png en la misma carpeta que index.html.
+- Sube también logo-iniciacion.png, logo-confirmacion.png, logo-comunion.png y logo-perseverantes.png en esa misma carpeta.
 - Confirma los cambios en la rama usada por GitHub Pages.
 - Espera uno o dos minutos y actualiza la página.
 
@@ -21,6 +22,7 @@ LA PÁGINA INCLUYE
 - Lista de niños con 3 o más faltas separada por grupo, con tutor y contacto de WhatsApp.
 - Reporte individual imprimible para cada niño que requiere seguimiento.
 - Diseño adaptado a celular con amarillo, rojo, azul y negro.
+- Logo propio en las tarjetas de Iniciación, Confirmación, Comunión y Perseverantes.
 - Imagen animada del Señor de la Misericordia en el encabezado.
 - Botón para reintentar cuando falle la conexión.
 
@@ -30,6 +32,7 @@ CORRECCIÓN DE CONEXIÓN
 - El grupo abierto se actualiza automáticamente cada 15 segundos.
 - Sábado y domingo forman una sola obligación: asistir cualquiera de los dos días cuenta como una asistencia; faltar ambos cuenta como una falta.
 - La Hora Santa aparece en amarillo dentro del caminito y en la impresión, pero es únicamente referencia: no suma asistencia ni falta de Misa.
+- La Hora Santa solo se pinta de amarillo cuando sí asistió; cuando no existe asistencia permanece en gris.
 - El padrón incorpora también la hoja GENERAL de REGISTRO PERSEVERANTE.
 - Perseverantes reconoce los códigos Pers1, Pers2 y Pers3 aunque las hojas se llamen HILIAMOR PERS, FIDENCIO y EDIL PERS.
 - El reporte de 3 o más faltas carga por etapas: primero nivel, después catequista y al final únicamente sus faltantes.
