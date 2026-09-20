@@ -15,7 +15,7 @@ Esta versión no solicita contraseña. Cualquier persona que tenga el enlace pue
 LA PÁGINA INCLUYE
 - Acceso directo sin contraseña.
 - Pantalla inicial con tarjetas de Iniciación, Confirmación, Comunión, Perseverantes, Catequistas y 3 o más faltas.
-- Consulta por catequista y por sus grupos.
+- Consulta de la asistencia personal a Misa de cada catequista, con asistencias, faltas e historial por fecha.
 - Lista de niños con un camino visual de las misas cumplidas y faltantes.
 - Reporte completo del grupo para imprimir o guardar como PDF.
 - Lista de niños con 3 o más faltas separada por grupo, con tutor y contacto de WhatsApp.
@@ -29,6 +29,9 @@ CORRECCIÓN DE CONEXIÓN
 - Los porcentajes aparecen progresivamente sin bloquear la pantalla.
 - El grupo abierto se actualiza automáticamente cada 15 segundos.
 - Sábado y domingo forman una sola obligación: asistir cualquiera de los dos días cuenta como una asistencia; faltar ambos cuenta como una falta.
+- La Hora Santa aparece en amarillo dentro del caminito y en la impresión, pero es únicamente referencia: no suma asistencia ni falta de Misa.
+- El padrón incorpora también la hoja GENERAL de REGISTRO PERSEVERANTE.
+- La impresión de cada grupo usa una tabla compacta tipo Excel, muestra las fechas por niño y está preparada para que hasta 25 niños quepan en una sola hoja horizontal.
 - Cada grupo muestra su porcentaje acumulado; 100% significa que todos cumplieron todos los fines de semana contabilizados.
 - El reporte ya no se detiene si faltan datos del tutor o WhatsApp.
 - Si la respuesta es demasiado grande para el caché, se entrega directamente.
