@@ -1,0 +1,38 @@
+ASISTENCIA A MISA CATEKIDS 2026–2027 — ACCESO CON ENLACE
+
+Esta versión no solicita contraseña. Cualquier persona que tenga el enlace puede consultar la información. La página es solamente de lectura.
+
+1. APPS SCRIPT
+- El index.html ya tiene conectada la dirección /exec usada por la página actual.
+- Conserva publicada la versión corregida de Apps Script que consulta las tres hojas de asistencia.
+
+2. ACTUALIZAR GITHUB PAGES
+- Sustituye el index.html anterior del repositorio por el de este paquete.
+- Sube también senor-misericordia.png en la misma carpeta que index.html.
+- Confirma los cambios en la rama usada por GitHub Pages.
+- Espera uno o dos minutos y actualiza la página.
+
+LA PÁGINA INCLUYE
+- Acceso directo sin contraseña.
+- Pantalla inicial con tarjetas de Iniciación, Confirmación, Comunión, Perseverantes, Catequistas y 3 o más faltas.
+- Consulta por catequista y por sus grupos.
+- Lista de niños con un camino visual de las misas cumplidas y faltantes.
+- Reporte completo del grupo para imprimir o guardar como PDF.
+- Lista de niños con 3 o más faltas separada por grupo, con tutor y contacto de WhatsApp.
+- Reporte individual imprimible para cada niño que requiere seguimiento.
+- Diseño adaptado a celular con amarillo, rojo, azul y negro.
+- Imagen animada del Señor de la Misericordia en el encabezado.
+- Botón para reintentar cuando falle la conexión.
+
+CORRECCIÓN DE CONEXIÓN
+- La portada descarga solamente el índice de cursos y grupos; los niños se consultan al abrir su grupo.
+- Los porcentajes aparecen progresivamente sin bloquear la pantalla.
+- El grupo abierto se actualiza automáticamente cada 15 segundos.
+- Sábado y domingo forman una sola obligación: asistir cualquiera de los dos días cuenta como una asistencia; faltar ambos cuenta como una falta.
+- Cada grupo muestra su porcentaje acumulado; 100% significa que todos cumplieron todos los fines de semana contabilizados.
+- El reporte ya no se detiene si faltan datos del tutor o WhatsApp.
+- Si la respuesta es demasiado grande para el caché, se entrega directamente.
+- Si ocurre otro problema, la página mostrará el detalle real para identificarlo.
+
+PRIVACIDAD
+Quien tenga el enlace podrá ver nombres, códigos, asistencias y datos de contacto familiar. Comparte el enlace únicamente con catequistas autorizados y no lo publiques en redes abiertas.
