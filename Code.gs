@@ -10,6 +10,28 @@ const REVIEW_CONFIG = Object.freeze({
   GROUP_CACHE_SECONDS: 20
 });
 
+// Índice ligero: evita abrir y recorrer más de 35 hojas al cargar la portada.
+const REVIEW_GROUPS = Object.freeze([
+  ['SILVIA','INICIACIÓN','Ini1','SILVIA Y XIOMARA',22],['MARLEN','INICIACIÓN','Ini2','MARLEN Y ANA LUCIA',20],
+  ['SAMANTHA','INICIACIÓN','Ini3','SAMANTHA Y LUZ',20],['AURORA','INICIACIÓN','Ini4','AURORA Y MARIA GUADALUPE',19],
+  ['TADEO','INICIACIÓN','Ini5','TADEO Y HECTOR',22],['ANA','INICIACIÓN','Ini6','ANA Y DEVANY',20],
+  ['EDIL','INICIACIÓN','Ini7','EDIL Y CONCHITA',17],['JOHANA','INICIACIÓN','Ini8','JOHANA Y GUSTAVO',20],
+  ['MILDRED INI','INICIACIÓN','Ini9','MILDRED Y FAUSTINO',20],['LILIANA','INICIACIÓN','Ini10','LILIANA Y ALDO',21],
+  ['VICKY','CONFIRMACIÓN','Conf1','VICTORIA',15],['HILIAMOR','CONFIRMACIÓN','Conf2','HILIAMOR Y FELIPE DE JESUS',21],
+  ['RAQUEL','CONFIRMACIÓN','Conf3','RAQUEL Y IRENE',15],['CECILIA','CONFIRMACIÓN','Conf4','CECILIA',20],
+  ['ESTHER','CONFIRMACIÓN','Conf5','ESTHER Y NANDIYELI',15],['FIDE DE JESUS','CONFIRMACIÓN','Conf6','FIDENCIO DE JESUS Y GRECIA',14],
+  ['DON CHUY','CONFIRMACIÓN','Conf7','JESUS',19],['CONCHITA CONF','CONFIRMACIÓN','Conf8','CONCHITA Y ALDE',19],
+  ['ARACELI','CONFIRMACIÓN','Conf9','ARACELY, XIMENA Y TANIA',13],['ESTRELLA','CONFIRMACIÓN','Conf10','ESTRELLA',4],
+  ['MANDY','COMUNIÓN','Com1','MANDY',18],['TINA','COMUNIÓN','Com2','TINA Y JUVENCIA',19],
+  ['ROX','COMUNIÓN','Com3','ROX, JOSELYN Y DEVANY',16],['MILDRED COM','COMUNIÓN','Com4','MILDRED Y FAUSTINO',14],
+  ['PATY','COMUNIÓN','Com5','PATY Y MARISOL',18],['JORGE','COMUNIÓN','Com6','JORGE',13],
+  ['MONSE','COMUNIÓN','Com7','MONSE Y YOSELIN',22],['CONCHITA COM','COMUNIÓN','Com8','CONCHITA',15],
+  ['ALIZA','COMUNIÓN','Com9','ALIZA',20],['RICARDA','COMUNIÓN','Com10','RICARDA Y SEBASTIAN',13],
+  ['CAYETANA','COMUNIÓN','Com11','CAYETANA Y KARLA',10],['LIDIA','COMUNIÓN','Com12','MA. LIDIA',7],
+  ['HILIAMOR PERS','PERSEVERANTES','Pers1','CATEQUISTA HILIAMOR',6],['FIDENCIO','PERSEVERANTES','Pers2','CATEQUISTA FIDENCIO',7],
+  ['EDIL PERS','PERSEVERANTES','Pers3','CATEQUISTA EDIL',1]
+]);
+
 function doGet(e) {
   const p = (e && e.parameter) || {};
   const callback = String(p.callback || '');
@@ -30,32 +52,14 @@ function doGet(e) {
 }
 
 function getIndex_() {
-  const cache = CacheService.getScriptCache();
-  const cached = cache.get('review-index-v7');
-  if (cached) return JSON.parse(cached);
-  const ss = SpreadsheetApp.openById(REVIEW_CONFIG.SPREADSHEET_ID);
-  const groups = ss.getSheets().filter(isPublicGroup_).map(sheet => {
-    const lastRow = Math.max(5, Math.min(sheet.getLastRow(), 200));
-    const values = sheet.getRange(1, 1, lastRow, 3).getDisplayValues();
-    const labels = values.slice(0, 2);
-    const title = String(labels[0][0] || '');
-    const subtitle = String(labels[1][0] || '');
-    const stageMatch = title.match(/·\s*([^·]+)\s*·/);
-    const groupMatch = subtitle.match(/GRUPO:\s*([^·]+)/i);
-    const cateMatch = subtitle.match(/CATEQUISTA:\s*([^·]+)/i);
-    const groupName = groupMatch ? groupMatch[1].trim() : sheet.getName();
-    const childrenCount = values.slice(5).filter(row => String(row[2] || '').trim()).length;
-    return {
-      sheet: sheet.getName(),
-      stage: stageMatch ? stageMatch[1].trim() : 'CATEKIDS',
-      group: groupName,
-      catechist: cateMatch ? cateMatch[1].trim() : '',
-      childrenCount: childrenCount
-    };
-  });
-  const result = { ok: true, updated: formatNow_(ss), groups: groups };
-  try { cache.put('review-index-v7', JSON.stringify(result), REVIEW_CONFIG.INDEX_CACHE_SECONDS); } catch (_) {}
-  return result;
+  const groups = REVIEW_GROUPS.map(row => ({
+    sheet: row[0], stage: row[1], group: row[2], catechist: row[3], childrenCount: row[4]
+  }));
+  return {
+    ok: true,
+    updated: Utilities.formatDate(new Date(), 'America/Mexico_City', 'dd/MM/yyyy HH:mm'),
+    groups: groups
+  };
 }
 
 function getGroup_(sheetName, includeFamily) {
@@ -289,7 +293,15 @@ function readGroup_(sheet, tz, families, attendanceIndex, registryChildren) {
 }
 
 function safeAttendanceIndex_(tz) {
-  try { return readAttendanceIndex_(tz); }
+  try {
+    const cache = CacheService.getScriptCache();
+    const key = 'attendance-index-v3';
+    const cached = cache.get(key);
+    if (cached) return JSON.parse(cached);
+    const result = readAttendanceIndex_(tz);
+    try { cache.put(key, JSON.stringify(result), 45); } catch (_) {}
+    return result;
+  }
   catch (_) { return { byCode: {}, byName: {}, schedule: {}, holyHourByCode: {}, holyHourByName: {}, holyHourSchedule: {} }; }
 }
 
@@ -404,12 +416,16 @@ function holyHourFromDate_(date, tz) {
 }
 
 function coerceDate_(raw, displayed) {
-  if (raw instanceof Date && !isNaN(raw)) return raw;
   const text = String(displayed || raw || '').trim();
-  let m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  // La fecha visible se interpreta al mediodía para impedir que UTC la mueva
+  // al día anterior. Esto es esencial para reconocer correctamente los jueves.
+  let m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+.*)?$/);
   if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), 12, 0, 0);
-  m = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  m = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
   if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+  if (raw instanceof Date && !isNaN(raw)) {
+    return new Date(raw.getFullYear(), raw.getMonth(), raw.getDate(), 12, 0, 0);
+  }
   return null;
 }
 

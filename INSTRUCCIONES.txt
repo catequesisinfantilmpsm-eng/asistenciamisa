@@ -34,7 +34,11 @@ CORRECCIÓN DE CONEXIÓN
 - Perseverantes reconoce los códigos Pers1, Pers2 y Pers3 aunque las hojas se llamen HILIAMOR PERS, FIDENCIO y EDIL PERS.
 - El reporte de 3 o más faltas carga por etapas: primero nivel, después catequista y al final únicamente sus faltantes.
 - Los porcentajes ya no se calculan para todos los grupos al abrir un nivel; se calculan al entrar al grupo para acelerar la consulta.
+- La portada usa un índice ligero y ya no abre las 35 hojas al iniciar; esto evita el mensaje de consulta demasiado lenta.
+- Perseverantes muestra 14 niños en total: Pers1 (6), Pers2 (7) y Pers3 (1).
+- Las asistencias consultadas se conservan brevemente en memoria para acelerar las siguientes aperturas.
 - Solo los registros de Hora Santa realizados en jueves aparecen en amarillo; durante el mes son referencia y no generan falta.
+- Corrección 17/09/2026: las fechas visibles se leen sin desplazamiento UTC, evitando que un jueves sea interpretado como miércoles.
 - La impresión de cada grupo usa una tabla compacta tipo Excel, muestra las fechas por niño y está preparada para que hasta 25 niños quepan en una sola hoja horizontal.
 - Cada grupo muestra su porcentaje acumulado; 100% significa que todos cumplieron todos los fines de semana contabilizados.
 - El reporte ya no se detiene si faltan datos del tutor o WhatsApp.
